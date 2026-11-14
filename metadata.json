@@ -1,0 +1,6 @@
+{
+  "name": "清敬雅和 · 公众号 AI 仿写与视觉排版工作台",
+  "description": "一站式微信公众号 AI 风格提炼、真实感东方美学配图生成与富文本/PDF/HTML 排版导出工作台。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

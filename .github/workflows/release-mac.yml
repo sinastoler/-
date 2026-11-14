@@ -1,0 +1,68 @@
+name: Build & Publish macOS Quick-Install Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release 版本号 (例如 v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  release-macos-bundle:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies & Verify Build
+        run: |
+          npm install
+          npm run build
+
+      - name: Prepare macOS Quick-Install Package
+        run: |
+          chmod +x install-mac.command start-mac.command
+          PACKAGE_NAME="QingJingYaHe-WeChat-Studio-macOS"
+          mkdir -p "$PACKAGE_NAME"
+          rsync -av --exclude='node_modules' --exclude='.git' --exclude='.playwright-cli' --exclude="$PACKAGE_NAME" ./ "$PACKAGE_NAME/"
+          zip -r "${PACKAGE_NAME}.zip" "$PACKAGE_NAME"
+
+      - name: Create GitHub Release with One-Click macOS Installer
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name == 'main' && inputs.version || github.ref_name }}
+          name: "清敬雅和 · 公众号 AI 视觉排版工作台 (${{ github.ref_name == 'main' && inputs.version || github.ref_name }}) — macOS 快捷安装包"
+          body: |
+            ## 🍏 macOS 快捷安装指南（专为苹果电脑打造）
+
+            ### 方式一：下载安装包双击安装（最推荐 · 零代码基础）
+            1. 点击下方 Assets 中的 **`QingJingYaHe-WeChat-Studio-macOS.zip`** 下载并解压。
+            2. 双击文件夹内的 **`install-mac.command`**。
+            3. 脚本会自动配置环境、在您的 **Mac 桌面生成「启动-清敬雅和公众号工作台.command」快捷图标**，并自动在浏览器打开 `http://localhost:3000`。
+            4. 打开网页后，点击右上角 **「API 引擎设置」** 即可自由填入/更换 Gemini API Key、配置反向代理地址，或切换免费/付费模型。
+
+            *(注：首次在 Mac 上双击 `.command` 文件若提示“无法验证开发者”，请按住 `Control` 键点击 `install-mac.command` -> 选择「打开」，或在终端运行 `xattr -cr . && bash install-mac.command`)*
+
+            ### 方式二：Mac 终端一行命令极速安装
+            打开 Mac 自带的「终端 (Terminal)」，复制粘贴以下命令回车即可自动下载到桌面并启动：
+            ```bash
+            cd ~/Desktop && curl -L -o studio.zip https://github.com/${{ github.repository }}/releases/latest/download/QingJingYaHe-WeChat-Studio-macOS.zip && unzip -q -o studio.zip && cd QingJingYaHe-WeChat-Studio-macOS && chmod +x install-mac.command && ./install-mac.command
+            ```
+          files: |
+            QingJingYaHe-WeChat-Studio-macOS.zip
+            install-mac.command
+          draft: false
+          prerelease: false
